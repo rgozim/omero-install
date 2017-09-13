@@ -5,9 +5,14 @@ set -e
 set -u
 set -x
 
-export PATH=/usr/local/bin:$PATH
-export LANG=${LANG:-en_US.UTF-8}
-export LANGUAGE=${LANGUAGE:-en_US:en}
+# Write the following enviorment variables commands to the profile
+if [[ "${LANG}" != "en_GB.UTF-8" ]]; then
+  echo "export LANG=en_US.UTF-8" >> ~/.bash_profile
+fi
+
+if [[ "${LANG}" != "en_US:en" ]]; then
+  echo "export LANGUAGE=en_US:en" >> ~/.bash_profile
+fi
 
 # Test whether this script is run in a job environment
 JOB_NAME=${JOB_NAME:-}
@@ -46,22 +51,16 @@ brew install postgresql
 # dependencies may require sudo
 brew install python
 
-# Tap ome-alt library
-if [ "$TESTING_MODE" = true ]; then
-    brew tap --full ome/alt || echo "Already tapped"
-
-    # Install scc tools
-    pip install -U scc || echo "scc installed"
-
-    # Merge homebrew-alt PRs
-    cd $(brew --repository)/Library/Taps/ome/homebrew-alt
-    scc merge master
-
-    # Repair formula symlinks after merge
-    brew tap --repair
-else
-    brew tap ome/alt || echo "Already tapped"
-fi
+# This will add ice tap https://github.com/zeroc-ice/homebrew-tap
+# OMERO is only compatible with ICE 3.6 at the moment.
+brew tap zeroc-ice/tap || echo "Already tapped"
+brew install zeroc-ice/tap/ice36
+if brew ls --versions ice > /dev/null; then
+  # The package is installed
+  echo "Ice already installed, unlinkning it"
+  brew unlink ice 
+fi  
+brew link ice@3.6
 
 # Tap homebrew-science library (HDF5)
 brew tap homebrew/science || echo "Already tapped"
